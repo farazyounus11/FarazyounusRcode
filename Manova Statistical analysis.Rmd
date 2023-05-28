@@ -1,0 +1,151 @@
+---
+title: "Manova Statistical analysis"
+author: "Faraz Younus"
+date: "2023-05-27"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rmarkdown)
+SURVTIME <- read.table("C:/Users/farazyounus11/Desktop/Regression analysis/SURVTIME.txt", quote="\"", comment.char="")
+# Above is the survive datasheet by cancer type data set
+
+# I will rename my data frame as df
+df<- SURVTIME
+
+# st means survive time
+colnames(df) <- c("cancer", "gender", "N/a_col", "st1", "st2", "st3", "st4")
+
+# Print updated column names
+print(colnames(df))
+head(df)
+#Below you can see that 
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r survive time}
+attach(df)
+summary(df)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+Below we can see that the distribution of many varaibles isn't normal.
+
+MANOVA in R can be used to determine whether there are significant differences between multiple groups on multiple dependent variables. However, it does not tell you which groups differ from the rest. This can be determined using a post-hoc test, such as Linear Discriminant Analysis (LDA).
+
+MANOVA has several assumptions, including:
+
+Multivariate normality: Each combination of independent and dependent variables should have a multivariate normal distribution. This can be verified using Shapiro-Wilk's test.
+Linearity: Dependent variables should have a linear relationship with each group (factor) of the independent variable.
+No multicollinearity: Dependent variables should not have very high correlations.
+No outliers: There should not be any outliers in the dependent variables.
+
+This isn't important in our case. 
+```{r pressure, echo=TRUE}
+par(mfrow = c(2, 2))
+# This code allows use to get histograms of the distributions of different variables
+hist(Cancer)
+hist(gender)
+hist(st1)
+hist(st2)
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+To conduct a manova in R we can simply 
+
+```{r}
+
+library(car)
+
+# Create a factor variable for the independent variable
+
+factor <- factor(Cancer)
+
+group<- factor
+
+# Print the factor levels
+#group<- levels(factor)
+
+# Print the unique values
+print(unique_groups)
+# Perform the MANOVA
+result<-manova(cbind(st1, st2, st3, st4) ~ group, data = df)
+
+# Print the MANOVA results
+summary(result)
+
+```
+Pillai: The Pillai's trace statistic is a multivariate test statistic used in MANOVA. It measures the overall effect of the grouping variable on the dependent variables. The reported Pillai's trace value is 0.85343.
+
+Pr(>F): This column displays the p-value associated with the approximate F-test. It indicates the probability of observing the obtained F-statistic (or a more extreme value) under the null hypothesis of no group effect. In this case, the p-value is 2.189e-05, which is very small, suggesting strong evidence against the null hypothesis.
+
+Overall, the MANOVA results suggest that there is a significant multivariate effect of the grouping variable on the dependent variables (st1, st2, st3, st4).
+
+```{r}
+# Perform MANOVA
+library(ggplot2)
+library(gridExtra)
+
+box_sl <- ggplot(iris, aes(x = Species, y = Sepal.Length, fill = Species)) +
+  geom_boxplot() +
+  theme(legend.position = "top")
+box_sw <- ggplot(iris, aes(x = Species, y = Sepal.Width, fill = Species)) +
+  geom_boxplot() +
+  theme(legend.position = "top")
+box_pl <- ggplot(iris, aes(x = Species, y = Petal.Length, fill = Species)) +
+  geom_boxplot() +
+  theme(legend.position = "top")
+box_pw <- ggplot(iris, aes(x = Species, y = Petal.Width, fill = Species)) +
+  geom_boxplot() +
+  theme(legend.position = "top")
+
+grid.arrange(box_sl, box_sw, box_pl, box_pw, ncol = 2, nrow = 2)
+
+```
+```{r}
+dependent_vars <- cbind(iris$Sepal.Length, iris$Sepal.Width, iris$Petal.Length, iris$Petal.Width)
+independent_var <- iris$Species
+
+manova_model <- manova(dependent_vars ~ independent_var, data = iris)
+summary(manova_model)
+```
+```{r}
+library(effectsize)
+
+eta_squared(manova_model)
+
+```
+
+```{r}
+library(MASS)
+
+iris_lda <- lda(independent_var ~ dependent_vars, CV = F)
+iris_lda
+```
+
+```{r}
+LDA_Dataframe <- data.frame(
+  species = iris[, "Species"],
+  lda = predict(iris_lda)$x
+)
+LDA_Dataframe
+```
+
+```{r}
+ggplot(LDA_Dataframe) +
+  geom_point(aes(x = lda.LD1, y = lda.LD2, color = species), size = 4) +
+  theme_classic()
+```
+
+
+
